@@ -47,7 +47,7 @@ class StatsController extends Controller
         $expensesByCategory = Transaction::where('user_id',$user->id)
                            -> where('type','expense')
                            -> select('category_id', DB::raw('SUM(amount) as total'))
-                           -> with('category:category_id,name,color,icon')
+                           -> with('category:category_id,name,color,icon,created_at,updated_at')
                            -> groupBy('category_id')
                            -> orderBy('total','desc')
                            -> limit(5)
@@ -55,7 +55,7 @@ class StatsController extends Controller
 
         //Recent Transaction
         $recentTransactions = Transaction::where('user_id',$user->id)
-                           -> with('category:category_id,name,color,icon')
+                           -> with('category:category_id,name,color,icon,created_at,updated_at')
                            -> orderBy ('transaction_date','desc')
                            -> orderBy ('created_at','desc')
                            -> limit(5)

@@ -20,7 +20,7 @@ class TransactionController extends Controller
 
         $query = Transaction::query()
               -> where('user_id',$user->id)
-              -> with('category:category_id,name,slug,type,icon,color');
+              -> with('category:category_id,name,slug,type,icon,color,created_at,updated_at');
         
         //Filter by type(income/expense)
         if($request -> has('type')){
@@ -52,7 +52,7 @@ class TransactionController extends Controller
 
         // search in description
         if($request -> has('search')){
-            $query->where('description','LIKE','%'.$request->search.'%');
+            $query->where('description','ilike','%'.$request->search.'%');
         }
 
         //filter by amount range

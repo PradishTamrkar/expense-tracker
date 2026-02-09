@@ -19,8 +19,8 @@ class CategoryResource extends JsonResource
             'color'=>$this->color,
             'description'=>$this->description,
             'is_active'=>$this->is_active,
-            'created_at' => $this->created_at->format('Y-m-d H:i:s'),
-            'updated_at' => $this->updated_at->format('Y-m-d H:i:s'),
+            'created_at' => $this->created_at?$this->created_at->format('Y-m-d H:i:s') : null,
+            'updated_at' => $this->updated_at?$this->updated_at->format('Y-m-d H:i:s') : null,
             'transactions'=> TransactionResource::collection($this->whenLoaded('transactions')),
             'transactions_count'=>$this->when(
                 $this->relationLoaded('transactions'),
