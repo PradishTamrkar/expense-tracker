@@ -12,7 +12,7 @@ class AuthController extends Controller
 {
     //Register user
     public function register(Request $request){
-        try{
+
             $validated= $request->validate([
                 'name'=>'required|string|max:255',
                 'email'=>'required|email|unique:users,email',
@@ -35,13 +35,6 @@ class AuthController extends Controller
                 'token'=>$token,
                 'token_type'=>'Bearer',
             ],201);
-        }catch(ValidationException $e){
-            return response()->json([
-                'success'=>false,
-                'message'=>'Validation Failed',
-                'errors'=>$e->errors()
-            ],422);
-        }
     }
 
     //user login

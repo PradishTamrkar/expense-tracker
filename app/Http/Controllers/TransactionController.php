@@ -14,9 +14,76 @@ class TransactionController extends Controller
      * Display a listing of the resource.
      * get all /api/transactions
      */
-    public function index()
+    public function index(Request $request)
     {
-        $transaction = Transaction::with('category')->get(); //to include category data
+        $user = $request->user();
+
+        $query = Transaction::query()
+              -> where('user_id',$user->id)
+              -> with('category:category_id,name,slug,type,icon,color');
+        
+        //Filter by type(income/expense)
+        if($request -> has('type')){
+            $query->where('type',$request->type);
+        }
+
+        //filter by category
+        if($request -> has('category_id')){
+            $query->where('category_id',$request->category_id);
+        }
+
+        //filter by date range
+        if($request -> has('start_date')){
+            $query->whereDate('transaction_date','>=',$request->start_date);
+        }
+
+        if($request -> has('end_date')){
+            $query->whereDate('transaction_date','<=',$request->end_date);
+        }
+
+        //filter by month and year
+        if($request -> has('month')){
+            $query->whereMonth('transaction_date',$request->month);
+        }
+
+        if($request -> has('year')){
+            $query->whereYear('transaction_date',$request->year);
+        }
+
+        // search in description
+        if($request -> has('search')){
+            $query->where('description','LIKE','%'.$request->search.'%');
+        }
+
+        //filter by amount range
+        if($request -> has('min_amount')){
+            $query->where('amount','>=',$request->min_amount);
+        }
+
+        if($request -> has('max_amount')){
+            $query-> where('amount','<=',$request->max_amount);
+        }
+
+        //sorting
+        $sortBy = $request->get('sort_by','transaction_date');
+        $sortOrder = $request->get('sort_order','desc');
+
+        //validate sort feilds
+        $allowedSortFields = ['transaction_date','amount','created_at'];
+        if(in_array($sortBy, $allowedSortFields)){
+            $query->orderBy($sortBy,$sortOrder);
+        }
+
+        //add secondasry sort by created_at
+        if($sortBy !== 'created_at'){
+            $query->orderBy('created_at','desc');
+        }
+
+        //pagination
+        $perPage = $request->get('per_page',15);
+        $perPage = min($perPage, 100); //max 100 per page
+
+        $transaction = $query->paginate($perPage);
 
         return TransactionResource::collection($transaction);
     }
@@ -28,7 +95,9 @@ class TransactionController extends Controller
     public function store(StoreTransactionRequest $request)
     {
         try{
-            $validated = $request->validate();
+            $validated = $request->validated();
+
+            $validated['user_id'] = $request->user()->id;
 
             $transaction = Transaction::create($validated);
 
@@ -60,9 +129,12 @@ class TransactionController extends Controller
      * Display the specified resource.
      * get /api/transaction/{id}
      */
-    public function show(string $id)
+    public function show(Request $request, string $id)
     {
-        $transaction = Transaction::with('category')->find($id);
+        $transaction = Transaction::with('category')
+                    -> where('user_id', $request->user()->id)
+                    -> where('transaction_id', $id)
+                    -> first();
         
         if (!$transaction) {
             return response()->json([
@@ -85,7 +157,9 @@ class TransactionController extends Controller
     */
     public function update(UpdateTransactionRequest $request, string $id)
     {
-        $transaction = Transaction::find($id);
+        $transaction = Transaction::where('user_id',$request->user()->id)
+                                  ->where('id',$id)
+                                  ->first();
         
         if (!$transaction) {
             return response()->json([
@@ -95,7 +169,7 @@ class TransactionController extends Controller
         }
         
         try {
-            $validated = $request->validate();
+            $validated = $request->validated();
             
             $transaction->update($validated);
             $transaction->load('category');
@@ -119,9 +193,11 @@ class TransactionController extends Controller
      * Remove the specified resource from storage.
      * Delete /api/transaction/{id}
      */
-    public function destroy(string $id)
+    public function destroy(Request $request, string $id)
     {
-        $transaction = Transaction::find($id);
+        $transaction = Transaction::where('user_id',$request->user()->id)
+                                  ->where('id',$id)
+                                  ->first();
         
         if (!$transaction) {
             return response()->json([

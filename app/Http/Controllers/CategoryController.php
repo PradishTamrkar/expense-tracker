@@ -30,7 +30,7 @@ class CategoryController extends Controller
     public function store(StoreCategoryRequest $request)
     {
         try{
-            $validated = $request->validate();
+            $validated = $request->validated();
             $validated['slug']=Str::slug($validated['name']);
 
             $category = Category::create($validated);
@@ -84,7 +84,7 @@ class CategoryController extends Controller
         }
 
         try{
-            $validated= $request->validate();
+            $validated= $request->validated();
 
             if(isset($validated['name'])){
                 $validated['slug']=Str::slug($validated['name']);
